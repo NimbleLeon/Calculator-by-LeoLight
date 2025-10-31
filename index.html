@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Glass Calculator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1a1a1a, #2d2d2d);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .calculator {
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(20px);
+            border-radius: 25px;
+            padding: 30px;
+            box-shadow: 
+                0 8px 32px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            max-width: 350px;
+            width: 100%;
+        }
+
+        .display {
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 15px;
+            padding: 25px 20px;
+            margin-bottom: 25px;
+            text-align: right;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .display-text {
+            color: white;
+            font-size: 2.5em;
+            font-weight: 300;
+            min-height: 60px;
+            transition: all 0.3s ease;
+            opacity: 0;
+            transform: translateY(10px);
+            animation: fadeInUp 0.3s ease forwards;
+        }
+
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .buttons-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+        }
+
+        .btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            color: white;
+            font-size: 1.3em;
+            font-weight: 500;
+            padding: 20px 0;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        .btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 69, 0, 0.2);
+        }
+
+        .btn:active {
+            transform: scale(0.95);
+            transition: transform 0.1s ease;
+        }
+
+        .operator {
+            background: linear-gradient(135deg, rgba(255, 69, 0, 0.3), rgba(255, 140, 0, 0.3));
+            border: 1px solid rgba(255, 69, 0, 0.3);
+        }
+
+        .operator:hover {
+            background: linear-gradient(135deg, rgba(255, 69, 0, 0.4), rgba(255, 140, 0, 0.4));
+            box-shadow: 0 5px 20px rgba(255, 69, 0, 0.3);
+        }
+
+        .equals {
+            background: linear-gradient(135deg, #ff4500, #ff8c00);
+            border: 1px solid rgba(255, 69, 0, 0.5);
+            color: white;
+        }
+
+        .equals:hover {
+            background: linear-gradient(135deg, #ff5500, #ff9c00);
+            box-shadow: 0 5px 25px rgba(255, 69, 0, 0.4);
+        }
+
+        .clear {
+            background: rgba(255, 255, 255, 0.1);
+            color: #ff4500;
+        }
+
+        .clear:hover {
+            background: rgba(255, 69, 0, 0.2);
+            color: white;
+        }
+
+        .zero {
+            grid-column: span 2;
+        }
+
+        /* Анимация нажатия */
+        @keyframes buttonPress {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(0.92);
+            }
+            100% {
+                transform: scale(0.95);
+            }
+        }
+
+        .btn-press {
+            animation: buttonPress 0.15s ease;
+        }
+
+        /* Анимация появления чисел */
+        @keyframes numberAppear {
+            0% {
+                opacity: 0;
+                transform: translateY(10px) scale(0.9);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .number-appear {
+            animation: numberAppear 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="calculator">
+        <div class="display">
+            <div class="display-text" id="display">0</div>
+        </div>
+        <div class="buttons-grid">
+            <button class="btn clear" onclick="clearDisplay()">C</button>
+            <button class="btn clear" onclick="deleteLast()">⌫</button>
+            <button class="btn operator" onclick="appendToDisplay('/')">/</button>
+            <button class="btn operator" onclick="appendToDisplay('*')">×</button>
+            
+            <button class="btn" onclick="appendToDisplay('7')">7</button>
+            <button class="btn" onclick="appendToDisplay('8')">8</button>
+            <button class="btn" onclick="appendToDisplay('9')">9</button>
+            <button class="btn operator" onclick="appendToDisplay('-')">-</button>
+            
+            <button class="btn" onclick="appendToDisplay('4')">4</button>
+            <button class="btn" onclick="appendToDisplay('5')">5</button>
+            <button class="btn" onclick="appendToDisplay('6')">6</button>
+            <button class="btn operator" onclick="appendToDisplay('+')">+</button>
+            
+            <button class="btn" onclick="appendToDisplay('1')">1</button>
+            <button class="btn" onclick="appendToDisplay('2')">2</button>
+            <button class="btn" onclick="appendToDisplay('3')">3</button>
+            <button class="btn equals" onclick="calculate()" rowspan="2">=</button>
+            
+            <button class="btn zero" onclick="appendToDisplay('0')">0</button>
+            <button class="btn" onclick="appendToDisplay('.')">.</button>
+        </div>
+    </div>
+
+    <script>
+        let display = document.getElementById('display');
+        let currentInput = '0';
+        let shouldResetDisplay = false;
+
+        function updateDisplay() {
+            display.textContent = currentInput;
+            display.classList.remove('number-appear');
+            void display.offsetWidth; // Trigger reflow
+            display.classList.add('number-appear');
+        }
+
+        function appendToDisplay(value) {
+            // Анимация кнопки
+            event.target.classList.add('btn-press');
+            setTimeout(() => {
+                event.target.classList.remove('btn-press');
+            }, 150);
+
+            if (shouldResetDisplay) {
+                currentInput = '';
+                shouldResetDisplay = false;
+            }
+
+            if (currentInput === '0' && value !== '.') {
+                currentInput = value;
+            } else {
+                // Проверка на множественные операторы
+                const lastChar = currentInput.slice(-1);
+                const operators = ['+', '-', '*', '/'];
+                
+                if (operators.includes(lastChar) && operators.includes(value)) {
+                    currentInput = currentInput.slice(0, -1) + value;
+                } else {
+                    currentInput += value;
+                }
+            }
+            
+            updateDisplay();
+        }
+
+        function clearDisplay() {
+            event.target.classList.add('btn-press');
+            setTimeout(() => {
+                event.target.classList.remove('btn-press');
+            }, 150);
+
+            currentInput = '0';
+            updateDisplay();
+        }
+
+        function deleteLast() {
+            event.target.classList.add('btn-press');
+            setTimeout(() => {
+                event.target.classList.remove('btn-press');
+            }, 150);
+
+            if (currentInput.length > 1) {
+                currentInput = currentInput.slice(0, -1);
+            } else {
+                currentInput = '0';
+            }
+            updateDisplay();
+        }
+
+        function calculate() {
+            event.target.classList.add('btn-press');
+            setTimeout(() => {
+                event.target.classList.remove('btn-press');
+            }, 150);
+
+            try {
+                // Заменяем × на * для вычислений
+                let expression = currentInput.replace(/×/g, '*');
+                
+                // Проверка на деление на ноль
+                if (expression.includes('/0')) {
+                    throw new Error('Деление на ноль');
+                }
+                
+                let result = eval(expression);
+                
+                // Округляем до 10 знаков после запятой
+                if (Number.isFinite(result)) {
+                    result = Math.round(result * 10000000000) / 10000000000;
+                }
+                
+                currentInput = result.toString();
+                shouldResetDisplay = true;
+                updateDisplay();
+            } catch (error) {
+                currentInput = 'Ошибка';
+                shouldResetDisplay = true;
+                updateDisplay();
+            }
+        }
+
+        // Инициализация
+        updateDisplay();
+    </script>
+</body>
+</html>
