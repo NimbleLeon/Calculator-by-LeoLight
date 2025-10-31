@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Liquid Glass Calculator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
+            overflow: hidden;
+            padding: 20px;
+        }
+
+        .calculator-container {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            padding: 20px;
+        }
+
+        .calculator {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+            position: relative;
+            z-index: 1;
+        }
+
+        .calculator::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+            z-index: -1;
+        }
+
+        .display {
+            padding: 25px 20px;
+            text-align: right;
+            background: rgba(0, 0, 0, 0.3);
+            margin: 15px;
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: inset 0 5px 10px rgba(0, 0, 0, 0.2);
+            min-height: 120px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+        }
+
+        .previous-operand {
+            font-size: 1.2rem;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 5px;
+            min-height: 1.5rem;
+        }
+
+        .current-operand {
+            font-size: 2.5rem;
+            color: white;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+            transform-style: preserve-3d;
+            perspective: 500px;
+        }
+
+        .buttons-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            padding: 20px;
+        }
+
+        .button {
+            padding: 20px;
+            border-radius: 15px;
+            border: none;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            color: white;
+            font-size: 1.5rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+            transform-style: preserve-3d;
+            perspective: 500px;
+        }
+
+        .button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: 0.5s;
+        }
+
+        .button:hover::before {
+            left: 100%;
+        }
+
+        .button:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-5px) scale(1.05);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .button:active {
+            transform: translateY(0) scale(0.95);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            transition: all 0.1s ease;
+        }
+
+        .operator {
+            background: rgba(255, 107, 107, 0.3);
+        }
+
+        .operator:hover {
+            background: rgba(255, 107, 107, 0.4);
+        }
+
+        .equals {
+            background: rgba(72, 187, 120, 0.3);
+            grid-column: span 2;
+        }
+
+        .equals:hover {
+            background: rgba(72, 187, 120, 0.4);
+        }
+
+        .clear, .delete {
+            background: rgba(255, 159, 67, 0.3);
+        }
+
+        .clear:hover, .delete:hover {
+            background: rgba(255, 159, 67, 0.4);
+        }
+
+        .number {
+            background: rgba(86, 171, 255, 0.2);
+        }
+
+        .number:hover {
+            background: rgba(86, 171, 255, 0.3);
+        }
+
+        .decimal {
+            background: rgba(186, 85, 211, 0.2);
+        }
+
+        .decimal:hover {
+            background: rgba(186, 85, 211, 0.3);
+        }
+
+        /* Анимация появления чисел */
+        @keyframes numberAppear {
+            0% {
+                transform: translateZ(50px) rotateX(90deg);
+                opacity: 0;
+            }
+            100% {
+                transform: translateZ(0) rotateX(0);
+                opacity: 1;
+            }
+        }
+
+        .number-appear {
+            animation: numberAppear 0.5s ease forwards;
+        }
+
+        /* Анимация нажатия кнопок */
+        @keyframes buttonPress {
+            0% {
+                transform: translateY(0) scale(1);
+                box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            }
+            50% {
+                transform: translateY(5px) scale(0.95);
+                box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            }
+            100% {
+                transform: translateY(0) scale(1);
+                box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            }
+        }
+
+        .button-press {
+            animation: buttonPress 0.2s ease;
+        }
+
+        /* Эффект частиц */
+        .particles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 50%;
+            animation: float 6s infinite ease-in-out;
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0) translateX(0);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 0;
+            }
+        }
+
+        /* Адаптивность */
+        @media (max-width: 480px) {
+            .calculator-container {
+                padding: 10px;
+            }
+            
+            .button {
+                padding: 15px;
+                font-size: 1.2rem;
+            }
+            
+            .current-operand {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="particles" id="particles"></div>
+    
+    <div class="calculator-container">
+        <div class="calculator">
+            <div class="display">
+                <div class="previous-operand"></div>
+                <div class="current-operand">0</div>
+            </div>
+            <div class="buttons-grid">
+                <button class="button clear">C</button>
+                <button class="button delete">DEL</button>
+                <button class="button operator">÷</button>
+                <button class="button operator">×</button>
+                
+                <button class="button number">7</button>
+                <button class="button number">8</button>
+                <button class="button number">9</button>
+                <button class="button operator">-</button>
+                
+                <button class="button number">4</button>
+                <button class="button number">5</button>
+                <button class="button number">6</button>
+                <button class="button operator">+</button>
+                
+                <button class="button number">1</button>
+                <button class="button number">2</button>
+                <button class="button number">3</button>
+                <button class="button equals">=</button>
+                
+                <button class="button number">0</button>
+                <button class="button decimal">.</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Создание частиц для фона
+            createParticles();
+            
+            const display = document.querySelector('.current-operand');
+            const previousDisplay = document.querySelector('.previous-operand');
+            const buttons = document.querySelectorAll('.button');
+            let currentOperand = '0';
+            let previousOperand = '';
+            let operation = null;
+            let resetScreen = false;
+
+            // Обновление дисплея
+            function updateDisplay() {
+                display.textContent = currentOperand;
+                previousDisplay.textContent = previousOperand;
+                
+                // Анимация появления нового числа
+                display.classList.remove('number-appear');
+                void display.offsetWidth; // Перезапуск анимации
+                display.classList.add('number-appear');
+            }
+
+            // Добавление цифры
+            function appendNumber(number) {
+                if (currentOperand === '0' || resetScreen) {
+                    currentOperand = number;
+                    resetScreen = false;
+                } else {
+                    currentOperand += number;
+                }
+            }
+
+            // Выбор операции
+            function chooseOperation(op) {
+                if (currentOperand === '') return;
+                
+                if (previousOperand !== '') {
+                    calculate();
+                }
+                
+                operation = op;
+                previousOperand = `${currentOperand} ${op}`;
+                currentOperand = '';
+            }
+
+            // Вычисление
+            function calculate() {
+                let computation;
+                const prev = parseFloat(previousOperand);
+                const current = parseFloat(currentOperand);
+                
+                if (isNaN(prev) || isNaN(current)) return;
+                
+                switch (operation) {
+                    case '+':
+                        computation = prev + current;
+                        break;
+                    case '-':
+                        computation = prev - current;
+                        break;
+                    case '×':
+                        computation = prev * current;
+                        break;
+                    case '÷':
+                        computation = prev / current;
+                        break;
+                    default:
+                        return;
+                }
+                
+                currentOperand = computation.toString();
+                operation = null;
+                previousOperand = '';
+                resetScreen = true;
+            }
+
+            // Очистка дисплея
+            function clearDisplay() {
+                currentOperand = '0';
+                previousOperand = '';
+                operation = null;
+            }
+
+            // Удаление последнего символа
+            function deleteNumber() {
+                if (currentOperand.length === 1) {
+                    currentOperand = '0';
+                } else {
+                    currentOperand = currentOperand.slice(0, -1);
+                }
+            }
+
+            // Добавление десятичной точки
+            function addDecimal() {
+                if (resetScreen) {
+                    currentOperand = '0.';
+                    resetScreen = false;
+                    return;
+                }
+                
+                if (currentOperand.includes('.')) return;
+                currentOperand += '.';
+            }
+
+            // Обработка нажатий кнопок
+            buttons.forEach(button => {
+                button.addEventListener('click', () => {
+                    // Анимация нажатия кнопки
+                    button.classList.remove('button-press');
+                    void button.offsetWidth; // Перезапуск анимации
+                    button.classList.add('button-press');
+                    
+                    if (button.classList.contains('number')) {
+                        appendNumber(button.textContent);
+                        updateDisplay();
+                    } else if (button.classList.contains('operator')) {
+                        chooseOperation(button.textContent);
+                        updateDisplay();
+                    } else if (button.classList.contains('equals')) {
+                        calculate();
+                        updateDisplay();
+                    } else if (button.classList.contains('clear')) {
+                        clearDisplay();
+                        updateDisplay();
+                    } else if (button.classList.contains('delete')) {
+                        deleteNumber();
+                        updateDisplay();
+                    } else if (button.classList.contains('decimal')) {
+                        addDecimal();
+                        updateDisplay();
+                    }
+                });
+            });
+
+            // Создание частиц для фона
+            function createParticles() {
+                const particlesContainer = document.getElementById('particles');
+                const particleCount = 30;
+                
+                for (let i = 0; i < particleCount; i++) {
+                    const particle = document.createElement('div');
+                    particle.classList.add('particle');
+                    
+                    // Случайная позиция
+                    const posX = Math.random() * 100;
+                    const posY = Math.random() * 100;
+                    
+                    // Случайная задержка анимации
+                    const delay = Math.random() * 5;
+                    
+                    // Случайный размер
+                    const size = Math.random() * 3 + 1;
+                    
+                    particle.style.left = `${posX}%`;
+                    particle.style.top = `${posY}%`;
+                    particle.style.animationDelay = `${delay}s`;
+                    particle.style.width = `${size}px`;
+                    particle.style.height = `${size}px`;
+                    
+                    particlesContainer.appendChild(particle);
+                }
+            }
+        });
+    </script>
+</body>
+</html>
